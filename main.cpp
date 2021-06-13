@@ -27,6 +27,9 @@ namespace exp_funcs {
         if (lv<98) {
             return pow(lv,3) * floor((1911-10*lv) / 3);
         }
+        if (lv<100) {
+            return pow(lv,3) * (160-lv) / 100;
+        }
         assert(0);
     }
     int fast(int lv) {
@@ -221,9 +224,7 @@ struct Move {
         dmg = ( ( ( ((2*Level)/5)+2 ) * power * a/d )/50 + 2)
         
         * targets (if the pk is in a double battle with Surf which hits all opponents for example) is 0.75 if it hits more than one target and 1 otherwise. This will be calculated elsewhere.
-
         * weather: 1.5 if the move type is water in rain, or if the move type is fire in harsh sunlight. 0.5 if water in harsh sunlight or fire in rain. This will also be calculated elsewhere.
-
         * critical. 2 for a critical hit, 1 otherwise, usually. This is set by the user of course. It can be 1.5 if the gen it's based on is 6+.
         Critical hits (aka crits) have varying probabilities depending on the move being used, items and natures. There are 4 stages:
         0: crit rate = 1/16
@@ -232,15 +233,11 @@ struct Move {
         3: 1/3
         4+: 1/2
         Access the crit chance through the crit_rates array. i.e. crit_rates[0] refers to the crit rate at stage 0 which is most pokemon.
-
         * random. A float between 0.85 and 1.00.
-
         * STAB. If one of the move's types matches one of the pokemon's types then Pokemon.stab_rate is activated.
         
         * type, if the move's type is effective against the pokemon.
-
         * burn, 0.5 if the attacker is burned, 1 otherwise, with the exception of the Guts ability. As such this will be a local variable for the pokemon and calculated elsewhere.
-
         * other, which for our purposes is 1 but can change. I may update this later.
         */
         int dmg=  ( (( (attacker.level<<1) / 5)+2) * power * applied_atk / applied_def ) /50 + 2;

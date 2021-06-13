@@ -1,2 +1,0 @@
-struct Pokemon;
-struct Move;
