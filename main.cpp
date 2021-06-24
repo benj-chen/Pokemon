@@ -1,102 +1,41 @@
 // Main.py is necessary for all of the display things, such as battle animations among other things.
-#include<bits/stdc++.h>
+#include "globals.h"
 using namespace std;
 // For random number generation
     #include <cstdlib>
     #include <ctime>
-    
 
-// print vectors
-template <typename T>
-std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {out<<'[';if(!v.empty())out<<v.front();for(int i=1;i<v.size();i++)out<<", "<<v[i];out<<']';return out;}
-// put effect statuses in a namespace
-namespace effect {
-    double super,not_very,normal,no,crit;
-}
 
-namespace exp_funcs {
-    // https://bulbapedia.bulbagarden.net/wiki/Experience
-    // Thank the c++ makers for implicit type conversion
-    int erratic(int lv) {
-        if (lv<50) {
-            return pow(lv,3) * (100-lv) / 50;
+// effect coefficient
+double effectiveness(const vector<string>& a, const vector<string>& b) {
+    double coefficient=effect::normal;
+    // for each a[i] that is effective against b[j], multiply the coefficient
+    for (string s: a) {
+        for (string t: b) {
+            if (linear_search_str(types[s].strong_to,t)) {
+                coefficient*=effect::super;
+            }
+            else if (linear_search_str(types[s].meh_to,t)) {
+                coefficient*=effect::not_very;
+            }
+            else if (linear_search_str(types[s].no_effect_to, t)) {
+                coefficient*=effect::no;
+            }
+            else {
+                coefficient*=effect::normal;
+            }
         }
-        if (lv<68) {
-            return pow(lv,3)*(150-lv) / 100;
-        }
-        if (lv<98) {
-            return pow(lv,3) * floor((1911-10*lv) / 3);
-        }
-        if (lv<100) {
-            return pow(lv,3) * (160-lv) / 100;
-        }
-        assert(0);
     }
-    int fast(int lv) {
-        return 4*pow(lv,3) / 5;
-    }
-    int medium_fast(int lv) {
-        return pow(lv,3);
-    }
-    int medium_slow(int lv) {
-        //  "according to the function, level 1 Pokémon in this group are calculated to have -54 experience points. This causes the experience underflow glitch in Generations I and II."
-        // this only occurs for level 1 pokemon - level 2 is 4.
-        // anyways this will make a special exception
-        if (lv==1) return 1;
-        return (pow(lv,3)*6/5) - 15*lv*lv + 100*lv -140;
-    }
-    int slow(int lv) {
-        return 5*(pow(lv,3))/4;
-    }
-    int fluctuating(int lv) {
-        if (lv<15) {
-            return pow(lv,3) * ( ((lv+1)/3 + 24)/50 );
-        }
-        if (lv<36) {
-            return pow(lv,3) * (lv+14)/50;
-        }
-        return pow(lv,3) * ((lv/2)+32)/50;
-    }
-    int exp_from_str(string cmd, int xp) {
-        if (cmd=="erratic")     return erratic(xp);
-        if (cmd=="fast")        return fast(xp);
-        if (cmd=="medium fast") return medium_fast(xp);
-        if (cmd=="medium slow") return medium_slow(xp);
-        if (cmd=="slow")        return slow(xp);
-        if (cmd=="fluctuating") return fluctuating(xp);
-        cerr << "command was not erratic, fast, medium fast, medium slow, slow, or fluctuating" << endl;
-        assert(0);
-        return -1;
-    }
+    return coefficient;
+    // for standard pokemon, effect::normal**2 is the standard effect, effect::no is no effect, effect::not_very or effect::not_very**2 is not very effective, etc.
 }
 
-double crit_rates[5]; // 5 levels including 0, anything above stage 4 is stage 4
-// string splitting algorithm
-vector<string> split_delimiter_char(const string s, const char delim) {
-    if (s=="") return {};
-    vector<string> res(1);
-    for (char c: s) {
-        if (c==delim) res.push_back("");
-        else res.back()+=string(1,c);
-    }
-    return res;
-}
-// linear search algorithm for convenience
-bool linear_search_str(const vector<string>& v, const string& s) {
-    for (string st: v) {
-        if (st==s) return true;
-    }
-    return false;
-}
-// Type struct
-struct Type {
-    string name;
-    vector<string> meh_to, strong_to, no_effect_to; // type names
-};
-// A vector of all the type names - they'll mostly be accessed by types the map
-vector<string> type_names;
-// the map that gives access to the various types and their type advantage
-map<string,Type> types;
+
+
+
+
+
+
 // build the types, determining each type and what types they're effect against, not very effective against, and no-damage against
 void build_types() {
     ifstream cin("input/type");
@@ -152,7 +91,7 @@ struct Pokemon {
     // Pokemon have levels indicating how strong they are.
     int level;
     // function to determine how much xp is needed to get to the next level
-    int (*exp_function) (int); 
+    string xp_func;
     
     int needed_xp;
     void hit(string& move, Pokemon& other) {
@@ -169,29 +108,7 @@ bool type_match(const vector<string>& a, const vector<string>& b) {
     }
     return false;
 }
-// effect coefficient
-double effectiveness(const vector<string>& a, const vector<string>& b) {
-    double coefficient=effect::normal;
-    // for each a[i] that is effective against b[j], multiply the coefficient
-    for (string s: a) {
-        for (string t: b) {
-            if (linear_search_str(types[s].strong_to,t)) {
-                coefficient*=effect::super;
-            }
-            else if (linear_search_str(types[s].meh_to,t)) {
-                coefficient*=effect::not_very;
-            }
-            else if (linear_search_str(types[s].no_effect_to, t)) {
-                coefficient*=effect::no;
-            }
-            else {
-                coefficient*=effect::normal;
-            }
-        }
-    }
-    return coefficient;
-    // for standard pokemon, effect::normal**2 is the standard effect, effect::no is no effect, effect::not_very or effect::not_very**2 is not very effective, etc.
-}
+
 // Move struct
 struct Move {
     // usually have one type, but Flying Press has two (Flying, Fighting). They can have more. Let's put it in a vector.
@@ -222,7 +139,20 @@ struct Move {
         applied_def = (is_spatk? defender.spdef : defender.def);
         /*
         dmg = ( ( ( ((2*Level)/5)+2 ) * power * a/d )/50 + 2)
-        
+            * targets : if the number of targets in a battle is more than 1, targets is 0.75, else 1. calculated elsewhere
+            * weather : 
+            1.5        1.5
+            ---------------------------
+            rain       fire           | 0.5
+            water      harsh sunlight | 0.5
+            i.e. a fire type move in rain is 0.5. calculated elsewhere
+            * critical : 1 if no critical hit occurs, otherwise effect::crit
+            To calcualate a crit, a random decimal between 
+            * random : between 0.85 and 1. Calculated here.
+            * STAB : Pokemon.stab_rate if the pokemon's type matches one of the move's type
+            * type [effectiveness] : The corresponding multiplier if a move's type(s) are effective against the defending type(s).
+            * burn : 
+            * other
         * targets (if the pk is in a double battle with Surf which hits all opponents for example) is 0.75 if it hits more than one target and 1 otherwise. This will be calculated elsewhere.
         * weather: 1.5 if the move type is water in rain, or if the move type is fire in harsh sunlight. 0.5 if water in harsh sunlight or fire in rain. This will also be calculated elsewhere.
         * critical. 2 for a critical hit, 1 otherwise, usually. This is set by the user of course. It can be 1.5 if the gen it's based on is 6+.
@@ -237,7 +167,7 @@ struct Move {
         * STAB. If one of the move's types matches one of the pokemon's types then Pokemon.stab_rate is activated.
         
         * type, if the move's type is effective against the pokemon.
-        * burn, 0.5 if the attacker is burned, 1 otherwise, with the exception of the Guts ability. As such this will be a local variable for the pokemon and calculated elsewhere.
+        * burn, 0.5 if the attacker is burned, 1 otherwise, with the exception of the Guts ability. As such this will be calculated elsewhere.
         * other, which for our purposes is 1 but can change. I may update this later.
         */
         int dmg=  ( (( (attacker.level<<1) / 5)+2) * power * applied_atk / applied_def ) /50 + 2;
