@@ -2,11 +2,23 @@
 
 My attempt to recreate Pokemon Diamond, the first pokemon game I played... on an emulator when I was 14 years old.
 
-Graphics are managed almost exclusively by Pygame. Credits to Pygame for existing.
+Graphics are managed almost exclusively by Pygame. Credits to Pygame for existing and being free.
 
 Data about each pokemon is managed by their pokedex number.
 
-I have a bot that tries to automate the hard parts of entering the data.
+I will have a bot to manage the data.
+
+## Battling and Pokemon usage outside of battle (i.e. menu -> Pokemon, Pokemon storage system aka PC)
+
+All pokemon are part of a struct Pokemon. Each species of Pokemon has their own "template"; that is, upon initialization, using the data directory, there will be a (probably) map<int, Pokemon> representing each species. When spawning a pokemon, etc., the code will copy a Pokemon struct based on its species, then fill out the remaining details such as level, EVs, IVs, Nature, etc. Here's a scuffed UML class diagram:
+
+Pokemon
++vector<string> moveset
++vector<string> types
++int level
++vector<int> stats;
+
+Since I don't want to pass around data a bunch between different processes, I will probably have a main.cpp c++ file that includes the rest of the files. main.cpp will for sure be the heavylifter, with main.py handling only the input (arrow keys etc) and output (graphics). 
 
 ### sprites
 
